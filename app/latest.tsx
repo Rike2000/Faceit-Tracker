@@ -11,8 +11,30 @@ export default function Latest() {
   const { matchData } = route.params;
   const [matchStats, setMatchStats] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [image1Source, setImage1Source] = useState({ uri: matchData.teams.faction1.avatar });
+  const [image2Source, setImage2Source] = useState({ uri: matchData.teams.faction2.avatar });
+
+  const image1Error = () => {
+    setImage1Source({ uri: "https://media.istockphoto.com/id/1337144146/sv/vektor/default-avatar-profile-icon-vector.jpg?s=612x612&w=0&k=20&c=GXVOqN9-6nUrgmK2thaQuTtf1bpxUMCEUvNlun-uX7g=" })
+  }
+  const image2Error = () => {
+    setImage2Source({ uri: "https://media.istockphoto.com/id/1337144146/sv/vektor/default-avatar-profile-icon-vector.jpg?s=612x612&w=0&k=20&c=GXVOqN9-6nUrgmK2thaQuTtf1bpxUMCEUvNlun-uX7g=" })
+  }
 
   useEffect(() => {
+
+    // to handle the error if one of the team avatars is either an empty string or an invalid link
+    if (!matchData.teams.faction1.avatar || matchData.teams.faction1.avatar.trim() === '') {
+      image1Error();
+    } else {
+      setImage1Source({ uri: matchData.teams.faction1.avatar });
+    }
+    if (!matchData.teams.faction2.avatar || matchData.teams.faction2.avatar.trim() === '') {
+      image2Error();
+    } else {
+      setImage2Source({ uri: matchData.teams.faction2.avatar });
+    }
+
     axios.get(`https://open.faceit.com/data/v4/matches/${matchData.match_id}/stats`, {
       headers: { Authorization: `Bearer ${apiKey}` }
     })
@@ -48,20 +70,6 @@ export default function Latest() {
     const team1Players = matchStats.rounds[0].teams[0].players;
     const team2Players = matchStats.rounds[0].teams[1].players;
 
-    if (matchData.teams.faction1.avatar == "") {
-      faction1Avatar = "https://media.istockphoto.com/id/1337144146/sv/vektor/default-avatar-profile-icon-vector.jpg?s=612x612&w=0&k=20&c=GXVOqN9-6nUrgmK2thaQuTtf1bpxUMCEUvNlun-uX7g="
-    } else {
-      var faction1Avatar = matchData.teams.faction1.avatar
-    }
-
-    if (matchData.teams.faction2.avatar == "") {
-      faction2Avatar = "https://media.istockphoto.com/id/1337144146/sv/vektor/default-avatar-profile-icon-vector.jpg?s=612x612&w=0&k=20&c=GXVOqN9-6nUrgmK2thaQuTtf1bpxUMCEUvNlun-uX7g="
-    } else {
-      var faction2Avatar = matchData.teams.faction2.avatar
-    }
-
-
-
     // Sort players by the number of kills in descending order
     team1Players.sort((a, b) => b.player_stats.Kills - a.player_stats.Kills);
     team2Players.sort((a, b) => b.player_stats.Kills - a.player_stats.Kills);
@@ -73,13 +81,14 @@ export default function Latest() {
           <View style={styles.mainContainer}>
             <View style={({ alignItems: "center" })}>
               <Image
-                source={{ uri: faction1Avatar }}
+                source={image1Source}
                 style={{
                   width: 80,
                   height: 80,
                   borderRadius: 50,
                   marginBottom: 5
                 }}
+                onError={image1Error}
               />
               <ThemedText type='defaultSemiBold'>{matchStats.rounds[0].teams[0].team_stats.Team}</ThemedText>
               {matchStats.rounds[0].teams[0].team_stats["Team Win"] == 1 && (
@@ -94,13 +103,14 @@ export default function Latest() {
             </View>
             <View style={({ alignItems: "center" })}>
               <Image
-                source={{ uri: faction2Avatar }}
+                source={image2Source}
                 style={{
                   width: 80,
                   height: 80,
                   borderRadius: 50,
                   marginBottom: 5
                 }}
+                onError={image2Error}
               />
               <ThemedText type='defaultSemiBold'>{matchStats.rounds[0].teams[1].team_stats.Team}</ThemedText>
               {matchStats.rounds[0].teams[1].team_stats["Team Win"] == 1 && (
@@ -183,16 +193,6 @@ const styles = StyleSheet.create({
   playerColumn: {
     alignItems: 'flex-start',
     marginRight: 10,
-  },
-  playernames: {
-    fontSize: 20,
-    marginVertical: 10,
-  },
-  resultsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginVertical: 10,
   },
   scoreboardContainer: {
     flexDirection: 'row',

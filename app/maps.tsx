@@ -93,16 +93,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 15,
   },
-  resultsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginVertical: 10,
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
   mainContainer: {
     flexDirection: 'column',
     alignItems: 'center',
@@ -114,55 +104,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10,
   },
-  eloContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '90%',
-    backgroundColor: '#444',
-    padding: 10,
-    marginVertical: 10,
-    borderColor: '#444',
-    borderWidth: 1,
-    borderRadius: 10,
-  },
-  eloContentContainer: {
-    flexDirection: 'column',
-    flex: 1,
-    marginLeft: 10,
-  },
-  progressBarWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    position: 'relative',
-    width: '90%',
-    marginVertical: 10,
-    paddingRight: 35
-  },
-  progressBar: {
-    flex: 1,
-  },
-  nextLevelImage: {
-    resizeMode: 'contain',
-    height: 30,
-    width: 30,
-    position: 'absolute',
-    right: 0,
-    marginLeft: 10
-  },
-  levelImage: {
-    resizeMode: 'contain',
-    height: 45,
-    width: 45,
-  },
   rowContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 70,
   },
   statsContainer: {
     flexDirection: 'column',
@@ -178,21 +123,6 @@ const styles = StyleSheet.create({
   background: {
     width: '100%',
     backgroundColor: '#262626',
-  },
-  mapContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    width: '95%',
-    backgroundColor: '#444',
-    padding: 10,
-    marginVertical: 9,
-    borderColor: '#444',
-    borderWidth: 1,
-    borderRadius: 10,
-  },
-  mapContentContainer: {
-    flexDirection: "column",
-    alignContent: "center"
   },
   mapImage: {
     width: "95%",

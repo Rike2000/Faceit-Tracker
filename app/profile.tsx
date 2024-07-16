@@ -286,10 +286,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginVertical: 10,
   },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
   mainContainer: {
     flexDirection: 'column',
     alignItems: 'center',

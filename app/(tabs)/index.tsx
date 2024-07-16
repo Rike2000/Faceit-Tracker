@@ -223,24 +223,16 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
   container: {
     flex: 1,
-  },
-  scrollContainer: {
-    flexGrow: 1,
   },
   stepContainer: {
     gap: 8,
     marginBottom: 8,
   },
   background: {
-    flexDirection: 'row',
-    flexWrap: 'wrap'
+    maxWidth: "100%",
+    maxHeight: "100%"
   },
   input: {
     width: '100%',
