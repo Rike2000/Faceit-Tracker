@@ -22,7 +22,7 @@ export const skillLevelImages = {
   10: require('@/assets/images/lvl10.png'),
 };
 
-const TextInputExample = ({ text, onChangeText }) => {
+const TextInputExample = ({ text, onChangeText }: { text: any, onChangeText: any }) => {
   return (
     <TextInput
       style={styles.input}
@@ -45,7 +45,7 @@ export default function HomeScreen() {
     loadProfilesFromStorage();
   }, []);
 
-  const saveProfilesToStorage = async (profiles) => {
+  const saveProfilesToStorage = async (profiles: any) => {
     try {
       const jsonValue = JSON.stringify(profiles);
       await AsyncStorage.setItem('@profiles', jsonValue);
@@ -72,7 +72,7 @@ export default function HomeScreen() {
       setProfileDataList([]);
       setStorage(false)
       Alert.alert('Success', 'Profile data cleared successfully', [
-        { text: 'OK'},
+        { text: 'OK' },
       ]);
     } catch (e) {
       console.error('Error clearing profiles from storage', e);
@@ -81,26 +81,26 @@ export default function HomeScreen() {
 
   const ButtonAlertSuccess = () => {
     Alert.alert('Success', `Profile "${text}" added successfully`, [
-      { text: 'OK'},
+      { text: 'OK' },
     ]);
   };
 
   const ButtonAlertFailed = () => {
     Alert.alert('Something went wrong', `A player with the name "${text}" cannot be found or does not play cs2`, [
-      { text: 'OK'},
+      { text: 'OK' },
     ]);
   };
 
   const ButtonAlertDuplicate = () => {
     Alert.alert('Duplicate', `Profile "${text}" is already added`, [
-      { text: 'OK'},
+      { text: 'OK' },
     ]);
   };
 
   const ButtonAlertClearData = () => {
-    Alert.alert('Are you sure?', `Are you sure you want to clear all profiles?`, [
+    Alert.alert('Are you sure?', `Are you sure you want to delete all profiles from your tracker?`, [
       { text: 'Yes', onPress: () => clearProfilesFromStorage() },
-      { text: 'No'},
+      { text: 'No' },
     ]);
   };
 
@@ -152,15 +152,15 @@ export default function HomeScreen() {
     }
   };
 
-  const ClearButton =  () => {
-      return (
-        <TouchableOpacity style={styles.clearButton} onPress={ButtonAlertClearData}>
-          <Text style={styles.buttonText}>Clear Data</Text>
-        </TouchableOpacity>
-      );
+  const ClearButton = () => {
+    return (
+      <TouchableOpacity style={styles.clearButton} onPress={ButtonAlertClearData}>
+        <Text style={styles.buttonText}>Delete profiles</Text>
+      </TouchableOpacity>
+    );
   }
 
-  const ProfileCard = ({ profileData }) => {
+  const ProfileCard = ({ profileData }: { profileData: any }) => {
     const skillLevel = profileData.games.cs2.skill_level;
     const levelImage = skillLevelImages[skillLevel];
 
@@ -208,7 +208,7 @@ export default function HomeScreen() {
       }>
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Welcome to Faceit Tracker!</ThemedText>
-        <ThemedText>Start tracking player profiles now</ThemedText>
+        <ThemedText>Start tracking CS2 player profiles now</ThemedText>
         <ThemedText>Please note that player names are case sensitive</ThemedText>
       </ThemedView>
       <TextInputExample text={text} onChangeText={onChangeText} />

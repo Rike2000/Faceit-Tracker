@@ -166,7 +166,7 @@ export default function Profile() {
         team = "faction2"
       }
       if (team == results.winner) {
-        result = result = <ThemedText type='subtitle' style={({ color: "green" })}>WIN</ThemedText>
+        result = result = <ThemedText type='subtitle' style={({ color: "green" })}>WIN   </ThemedText>
       }
       if (team != results.winner) {
         result = <ThemedText type='subtitle' style={({ color: "red" })}>LOSS</ThemedText>
@@ -177,7 +177,7 @@ export default function Profile() {
       return (
         <TouchableOpacity key={index} onPress={() => navigateToLatest(items)} style={styles.mapContainer}>
           <View style={({ flexDirection: "row" })}>
-          <View style={({ paddingHorizontal: 30 })}>
+            <View style={({ paddingHorizontal: 30 })}>
               {result}
             </View>
             <ThemedText type='subtitle' style={({ marginBottom: 5 })}>{convertTimestampToReadableDate(started_at)}</ThemedText>
@@ -203,15 +203,30 @@ export default function Profile() {
             style={styles.profileImage}
           />
           <ThemedText type="title" style={{ paddingTop: 20 }}>{profileData.nickname}</ThemedText>
-          <TouchableOpacity onPress={() => handlePress("https://steamcommunity.com//profiles/" + profileData.steam_id_64)}>
-            <Image
-              source={require('@/assets/images/steam_icon.png')}
-              style={({
-                height: 30,
-                width: 30
-              })}
-            />
-          </TouchableOpacity>
+          <View style={styles.socialIconsContainer}>
+            <View style={styles.socialIcons}>
+              <TouchableOpacity onPress={() => handlePress("https://steamcommunity.com//profiles/" + profileData.steam_id_64)}>
+                <Image
+                  source={require('@/assets/images/steam_icon.png')}
+                  style={({
+                    height: 35,
+                    width: 35
+                  })}
+                />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.socialIcons}>
+              <TouchableOpacity onPress={() => handlePress("https://www.faceit.com//en/players/" + profileData.nickname)}>
+                <Image
+                  source={require('@/assets/images/faceit_icon.png')}
+                  style={({
+                    height: 35,
+                    width: 35
+                  })}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
           <ThemedView style={styles.mainContainer}>
             <ThemedText type='default'>Recent results</ThemedText>
             {renderResults(playerData.lifetime["Recent Results"])}
@@ -222,7 +237,7 @@ export default function Profile() {
               style={styles.levelImage}
             />
             <View style={styles.eloContentContainer}>
-              <ThemedText type='default'>Elo {profileData.games.cs2.faceit_elo} / {levelLimitMax}</ThemedText>
+              <ThemedText type='default'>Elo: <Text style={({ fontWeight: 'bold' })}>{profileData.games.cs2.faceit_elo}</Text> / {levelLimitMax}</ThemedText>
               <View style={styles.progressBarWrapper}>
                 <Progress.Bar
                   progress={progressPerc}
@@ -235,7 +250,7 @@ export default function Profile() {
                   style={styles.progressBar}
                 />
                 <Image
-                  source={levelImage + 1}
+                  source={skillLevel == 10 ? "" : levelImage + 1}
                   style={styles.nextLevelImage}
                 />
               </View>
@@ -384,4 +399,14 @@ const styles = StyleSheet.create({
     marginRight: 20,
     borderRadius: 5
   },
+  socialIconsContainer: {
+    flexDirection: 'row',
+  },
+  socialIcons: {
+    backgroundColor: "rgba(255, 95, 31, 0.8)",
+    padding: 3,
+    borderRadius: 6,
+    flexDirection: 'row',
+    marginHorizontal: 5
+  }
 });

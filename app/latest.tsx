@@ -123,13 +123,25 @@ export default function Latest() {
           </View>
           <View style={styles.mainContainer}>
             <ThemedText type='defaultSemiBold'>Map: </ThemedText>
-            <ThemedText type='subtitle'>{matchStats.rounds[0].round_stats.Map}</ThemedText>
+            <ThemedText type='subtitle'>{(matchStats.rounds[0].round_stats.Map).toUpperCase().slice(3)}</ThemedText>
           </View>
         </View>
 
         {/* FIRST TEAM SCOREBOARD */}
+        <View style={styles.teamTitleContainer}>
+        <Image
+          source={image1Source}
+          style={{
+            width: 50,
+            height: 50,
+            borderRadius: 50,
+            marginBottom: 5
+          }}
+          onError={image1Error}
+        />
         <ThemedText type='default' style={({ marginLeft: 10, marginBottom: 10 })}>{matchStats.rounds[0].teams[0].team_stats.Team}</ThemedText>
-        <View style={{ flexDirection: "row", marginHorizontal: 10 }}>
+        </View>
+        <View style={{ flexDirection: "row"}}>
           <View style={styles.playerColumn}>
             <ThemedText type='defaultSemiBold'>Player</ThemedText>
             {matchStats.rounds[0].teams[0].players.map((player, index) => (
@@ -144,7 +156,7 @@ export default function Latest() {
                 <View key={index} style={styles.titleContainer}>
                   <ThemedText type='defaultSemiBold'>{title}</ThemedText>
                   {matchStats.rounds[0].teams[0].players.map((player, playerIndex) => (
-                    <ThemedText key={playerIndex} style={{ marginVertical: 10 }} type='defaultSemiBold'>
+                    <ThemedText key={playerIndex} style={{ marginVertical: 10,}} type='defaultSemiBold'>
                       {player.player_stats[statKeyMapping[title]]}
                     </ThemedText>
                   ))}
@@ -155,8 +167,20 @@ export default function Latest() {
         </View>
 
         {/* SECOND TEAM SCOREBOARD */}
-        <ThemedText type='default' style={({ marginLeft: 10, marginBottom: 10, marginTop: 20 })}>{matchStats.rounds[0].teams[1].team_stats.Team}</ThemedText>
-        <View style={{ flexDirection: "row", marginHorizontal: 10 }}>
+        <View style={styles.teamTitleContainer}>
+        <Image
+          source={image2Source}
+          style={{
+            width: 50,
+            height: 50,
+            borderRadius: 50,
+            marginBottom: 5
+          }}
+          onError={image2Error}
+        />
+        <ThemedText type='default' style={({ marginLeft: 10, marginBottom: 10 })}>{matchStats.rounds[0].teams[1].team_stats.Team}</ThemedText>
+        </View>
+        <View style={{ flexDirection: "row"}}>
           <View style={styles.playerColumn}>
             <ThemedText type='defaultSemiBold'>Player</ThemedText>
             {matchStats.rounds[0].teams[1].players.map((player, index) => (
@@ -192,7 +216,8 @@ const styles = StyleSheet.create({
   },
   playerColumn: {
     alignItems: 'flex-start',
-    marginRight: 10,
+    paddingLeft: 10,
+    paddingRight: 5
   },
   scoreboardContainer: {
     flexDirection: 'row',
@@ -217,4 +242,10 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#262626',
   },
+  teamTitleContainer: {
+    flexDirection: 'row',
+    marginLeft: 10, 
+    marginVertical: 10,
+    alignItems: "center",
+  }
 });

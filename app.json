@@ -4,7 +4,7 @@
     "slug": "faceit-tracker",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/app-icon.png",
+    "icon": "./assets/images/app-icon1.jpg",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -19,7 +19,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/app-icon.png",
+        "foregroundImage": "./assets/images/app-icon1.jpg",
         "backgroundColor": "#262626"
       },
       "package": "com.rike2000.faceittracker"
