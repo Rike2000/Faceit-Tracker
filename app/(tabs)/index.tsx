@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Image, StyleSheet, TextInput, TouchableOpacity, Text, Alert, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import axios from 'axios';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
 const apiKey = process.env.EXPO_PUBLIC_FACEIT_APP_API_KEY;
 
@@ -44,6 +44,12 @@ export default function HomeScreen() {
   useEffect(() => {
     loadProfilesFromStorage();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadProfilesFromStorage();
+    }, [])
+  );
 
   const saveProfilesToStorage = async (profiles: any) => {
     try {
@@ -86,13 +92,13 @@ export default function HomeScreen() {
   };
 
   const ButtonAlertFailed = () => {
-    Alert.alert('Something went wrong', `A player with the name "${text}" cannot be found or does not play cs2`, [
+    Alert.alert('Something went wrong', `A player with the name "${text}" cannot be found or has not yet played CS2 on Faceit`, [
       { text: 'OK' },
     ]);
   };
 
   const ButtonAlertDuplicate = () => {
-    Alert.alert('Duplicate', `Profile "${text}" is already added`, [
+    Alert.alert('Error!', `Profile "${text}" is already added`, [
       { text: 'OK' },
     ]);
   };
@@ -165,7 +171,7 @@ export default function HomeScreen() {
     const levelImage = skillLevelImages[skillLevel];
 
     const navigateToProfile = () => {
-      navigation.navigate('profile', { profileData });
+      navigation.navigate('profile', { profileData, });
     };
 
     return (

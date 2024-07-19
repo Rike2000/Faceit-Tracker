@@ -103,12 +103,17 @@ export default function Profile() {
     }
   };
 
+  // Navigation functions
   const navigateToMaps = (segment) => {
     navigation.navigate('maps', { mapData: segment });
   };
 
   const navigateToLatest = (items) => {
     navigation.navigate('latest', { matchData: items });
+  };
+
+  const navigateToFriends = (friends_ids) => {
+    navigation.navigate('friends', { profileData: friends_ids });
   };
 
   const renderMapItems = () => {
@@ -226,6 +231,11 @@ export default function Profile() {
                 />
               </TouchableOpacity>
             </View>
+          </View>
+          <View style={styles.friendsButton}>
+            <TouchableOpacity onPress={() => navigateToFriends(profileData)}>
+              <ThemedText type='subtitle'>Friends</ThemedText>
+            </TouchableOpacity>
           </View>
           <ThemedView style={styles.mainContainer}>
             <ThemedText type='default'>Recent results</ThemedText>
@@ -408,5 +418,14 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     flexDirection: 'row',
     marginHorizontal: 5
+  },
+  friendsButton: {
+    backgroundColor: "rgba(255, 95, 31, 0.8)",
+    padding: 10,
+    borderRadius: 6,
+    flexDirection: 'row',
+    marginHorizontal: 5,
+    marginTop: 10,
+    fontSize: 20
   }
 });
