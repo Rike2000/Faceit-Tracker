@@ -1,9 +1,9 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { StyleSheet, Image, View, Text, ScrollView, FlatList, TouchableOpacity, Linking } from 'react-native';
+import { StyleSheet, Image, View, Text, ScrollView, Alert, TouchableOpacity, Linking } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import * as Progress from 'react-native-progress';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
@@ -135,7 +135,7 @@ export default function Profile() {
   };
 
 
-  function convertTimestampToReadableDate(timestamp) {
+  function convertTimestampToReadableDate(timestamp: number): string {
     // Convert the Unix timestamp to milliseconds
     const date = new Date(timestamp * 1000);
 
@@ -193,7 +193,28 @@ export default function Profile() {
   };
 
 
+// Save profile data to AsyncStorage
+const saveToFavorites = async () => {
+  try {
+    // Convert existing favorites to array (if empty, initialize with an empty array)
+    const existingFavorites = await AsyncStorage.getItem('favorites');
+    let favoritesArray = existingFavorites ? JSON.parse(existingFavorites) : [];
 
+    // Check if profileData is already in the favorites array
+    const isAlreadyFavorite = favoritesArray.some(favorite => favorite.player_id === profileData.player_id);
+
+    if (!isAlreadyFavorite) {
+      favoritesArray.push(profileData);
+      await AsyncStorage.setItem('favorites', JSON.stringify(favoritesArray));
+      Alert.alert('Success', `${profileData.nickname} has been added to your favorites!`);
+    } else {
+      Alert.alert('Notice', `${profileData.nickname} is already in your favorites.`);
+    }
+  } catch (error) {
+    console.log(error);
+    Alert.alert('Error', 'Failed to save to favorites.');
+  }
+};
 
 
 
@@ -235,6 +256,11 @@ export default function Profile() {
           <View style={styles.friendsButton}>
             <TouchableOpacity onPress={() => navigateToFriends(profileData)}>
               <ThemedText type='subtitle'>Friends</ThemedText>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.friendsButton}>
+            <TouchableOpacity onPress={() => saveToFavorites()}>
+              <ThemedText type='subtitle'>Save to favorites</ThemedText>
             </TouchableOpacity>
           </View>
           <ThemedView style={styles.mainContainer}>

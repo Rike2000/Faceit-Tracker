@@ -37,17 +37,20 @@ const TextInputExample = ({ text, onChangeText }: { text: any, onChangeText: any
 export default function HomeScreen() {
   const [text, onChangeText] = useState("");
   const [profileDataList, setProfileDataList] = useState([]);
+  const [favoritesDataList, setfavoritesDataList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation();
   const [storage, setStorage] = useState(false)
 
   useEffect(() => {
     loadProfilesFromStorage();
+    loadfavoritesFromStorage();
   }, []);
 
   useFocusEffect(
     useCallback(() => {
       loadProfilesFromStorage();
+      loadfavoritesFromStorage();
     }, [])
   );
 
@@ -66,9 +69,32 @@ export default function HomeScreen() {
       const jsonValue = await AsyncStorage.getItem('@profiles');
       if (jsonValue != null) {
         setProfileDataList(JSON.parse(jsonValue));
+        
       }
     } catch (e) {
       console.error('Error loading profiles from storage', e);
+    }
+  };
+
+  const loadfavoritesFromStorage = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem('favorites');
+      if (jsonValue != null) {
+        setfavoritesDataList(JSON.parse(jsonValue));
+      }
+    } catch (e) {
+      console.error('Error loading favorites from storage', e);
+    }
+  };
+  const clearfavoritesFromStorage = async () => {
+    try {
+      await AsyncStorage.removeItem('favorites');
+      setfavoritesDataList([]);
+      Alert.alert('Success', 'favorites cleared successfully', [
+        { text: 'OK' },
+      ]);
+    } catch (e) {
+      console.error('Error clearing favorites from storage', e);
     }
   };
 
@@ -110,6 +136,13 @@ export default function HomeScreen() {
     ]);
   };
 
+  const ButtonAlertClearfavorites = () => {
+    Alert.alert('Are you sure?', `Are you sure you want to delete favorited profiles?`, [
+      { text: 'Yes', onPress: () => clearfavoritesFromStorage() },
+      { text: 'No' },
+    ]);
+  };
+
 
   const ProfileDataQuery = () => {
     const isDuplicate = profileDataList.some(profile => profile.nickname.toLowerCase() === text.toLowerCase());
@@ -128,7 +161,7 @@ export default function HomeScreen() {
           ButtonAlertFailed();
         } else {
           ButtonAlertSuccess();
-          const updatedProfiles = [...profileDataList, response.data];
+          const updatedProfiles = [...profileDataList, response.data];          
           setProfileDataList(updatedProfiles);
           saveProfilesToStorage(updatedProfiles);
           onChangeText("")
@@ -162,6 +195,13 @@ export default function HomeScreen() {
     return (
       <TouchableOpacity style={styles.clearButton} onPress={ButtonAlertClearData}>
         <Text style={styles.buttonText}>Delete profiles</Text>
+      </TouchableOpacity>
+    );
+  }
+  const ClearButton2 = () => {
+    return (
+      <TouchableOpacity style={styles.clearButton} onPress={ButtonAlertClearfavorites}>
+        <Text style={styles.buttonText}>Delete favorites</Text>
       </TouchableOpacity>
     );
   }
@@ -219,11 +259,17 @@ export default function HomeScreen() {
       </ThemedView>
       <TextInputExample text={text} onChangeText={onChangeText} />
       <ButtonStatus />
-      {profileDataList.length > 0 && (<ClearButton />)}
       {isLoading ? <Text>Loading...</Text> : null}
+      {favoritesDataList.length > 0 && (<ThemedText type="subtitle">Favorited profiles ⭐</ThemedText>)}
+      {favoritesDataList.slice().reverse().map((profileData, index) => (
+        <ProfileCard key={index} profileData={profileData} />
+      ))}
+      {favoritesDataList.length > 0 && (<ClearButton2 />)}
+      {profileDataList.length > 0 && (<ThemedText type="subtitle">Followed profiles</ThemedText>)}
       {profileDataList.slice().reverse().map((profileData, index) => (
         <ProfileCard key={index} profileData={profileData} />
       ))}
+      {profileDataList.length > 0 && (<ClearButton />)}
     </ParallaxScrollView>
   );
 }
