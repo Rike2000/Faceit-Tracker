@@ -6,6 +6,9 @@ Faceit-Tracker is an app built using React native and Expo, designed to help use
 - View recent match history.
 - Explore detailed game statistics and performance metrics.
 
+https://github.com/user-attachments/assets/1b45ff7d-b1ad-4fa8-85af-06308d9536bc
+
+
 ## Prerequisites
 Before running the application, ensure that you have the following installed:
 
@@ -28,10 +31,4 @@ Before running the application, ensure that you have the following installed:
     EXPO_PUBLIC_FACEIT_APP_API_KEY = ""
    ```
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
   
