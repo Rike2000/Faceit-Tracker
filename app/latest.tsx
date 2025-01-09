@@ -1,14 +1,14 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { StyleSheet, View, Text, ScrollView, Image } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import { StyleSheet, View, Text, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { ThemedText } from '@/components/ThemedText';
 
 export default function Latest() {
   const apiKey = process.env.EXPO_PUBLIC_FACEIT_APP_API_KEY;
-  const route = useRoute();
-  const { matchData } = route.params;
+  const params = useLocalSearchParams();
+  const matchData = JSON.parse(params.matchData as string);
   const [matchStats, setMatchStats] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [image1Source, setImage1Source] = useState({ uri: matchData.teams.faction1.avatar });
@@ -65,7 +65,12 @@ export default function Latest() {
 
 
   if (isLoading) {
-    return <Text>Loading ...</Text>;
+    return (
+      <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="white" />
+          <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+  );
   } else {
     const team1Players = matchStats.rounds[0].teams[0].players;
     const team2Players = matchStats.rounds[0].teams[1].players;
@@ -76,7 +81,10 @@ export default function Latest() {
 
     const playerStatsTitles = ["Kills", "Assists", "Deaths", "K/D Ratio", "K/R Ratio", "Headshots", "Headshots %", "MVPs", "Triple Kills", "Quadro Kills", "Penta Kills"];
     return (
-      <ScrollView style={styles.background}>
+      <ScrollView 
+        style={styles.background}
+        contentContainerStyle={{ paddingBottom: 50 }}
+      >
         <View style={styles.headerImage}>
           <View style={styles.mainContainer}>
             <View style={({ alignItems: "center" })}>
@@ -221,6 +229,7 @@ const styles = StyleSheet.create({
   },
   scoreboardContainer: {
     flexDirection: 'row',
+    marginBottom: 20,
   },
   titleContainer: {
     marginHorizontal: 10,
@@ -241,11 +250,24 @@ const styles = StyleSheet.create({
   background: {
     width: '100%',
     backgroundColor: '#262626',
+    paddingBottom: 100,
   },
   teamTitleContainer: {
     flexDirection: 'row',
     marginLeft: 10,
     marginVertical: 10,
     alignItems: "center",
-  }
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 50,
+    backgroundColor: '#262626',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 18,
+    color: 'white',
+  },
 });

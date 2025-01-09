@@ -2,6 +2,7 @@
   "expo": {
     "name": "faceit-tracker",
     "slug": "faceit-tracker",
+    "newArchEnabled": true,
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/app-icon1.jpg",
@@ -30,7 +31,8 @@
       "favicon": "./assets/images/app-icon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

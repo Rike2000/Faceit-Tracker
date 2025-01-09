@@ -1,26 +1,58 @@
-import { StyleSheet, Image, View, Text, ScrollView, Alert, TouchableOpacity, Linking } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import { StyleSheet, Image, View, Text, ScrollView, Alert, TouchableOpacity, Linking, ActivityIndicator } from 'react-native';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import * as Progress from 'react-native-progress';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { skillLevelImages } from './(tabs)/index';
-import { useNavigation, NavigationContainer } from '@react-navigation/native';
 
 export default function Profile() {
   const apiKey = process.env.EXPO_PUBLIC_FACEIT_APP_API_KEY;
-  const route = useRoute();
-  const { profileData } = route.params;
-  const skillLevel = profileData.games.cs2.skill_level;
-  const levelImage = skillLevelImages[skillLevel];
-  const [playerData, setPlayerData] = useState([]);
+  const params = useLocalSearchParams();
+  const router = useRouter();
+  
+  const [profileData] = useState(() => {
+    try {
+      return JSON.parse(params.profileData as string);
+    } catch (error) {
+      console.error('Error parsing profile data:', error);
+      router.back();
+      return null;
+    }
+  });
+
+  const [playerData, setPlayerData] = useState({
+    lifetime: {
+      "Matches": "",
+      "Average K/D Ratio": "",
+      "Win Rate %": "",
+      "Current Win Streak": "",
+      "Longest Win Streak": "",
+      "Recent Results": [],
+      "Average Headshots %": "",
+      "Total Headshots %": "",
+      "K/D Ratio": "",
+      "Wins": "",
+      "Average MVPs": "",
+      "Average Triple Kills": "",
+      "Average Quadro Kills": "",
+      "Average Penta Kills": "",
+      "Average Assists": "",
+      "Average K/R Ratio": "",
+      "Average Deaths": "",
+      "Total MVPs": "",
+      "Average Kills": "",
+      "Headshots per Match": "",
+    }
+  });
   const [matchData, setMatchData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const navigation = useNavigation();
+  const skillLevel = profileData.games.cs2.skill_level;
+  const levelImage = skillLevelImages[skillLevel];
   const skillLevelLimitsMax = {
     1: 500,
     2: 750,
@@ -53,33 +85,82 @@ export default function Profile() {
     progressPerc = 1
   }
 
-
+  // Reset states when component unmounts
   useEffect(() => {
-    axios.get(`https://open.faceit.com/data/v4/players/${profileData.player_id}/stats/cs2`, {
-      headers: { Authorization: `Bearer ${apiKey}` }
-    })
-      .then(response => {
-        setPlayerData(response.data);
-      })
-      .catch(err => {
-        console.log(err);
-      })
-      .finally(() => {
-        setIsLoading(false);
+    return () => {
+      setPlayerData({
+        lifetime: {
+          "Matches": "",
+          "Average K/D Ratio": "",
+          "Win Rate %": "",
+          "Current Win Streak": "",
+          "Longest Win Streak": "",
+          "Recent Results": [],
+          "Average Headshots %": "",
+          "Total Headshots %": "",
+          "K/D Ratio": "",
+          "Wins": "",
+          "Average MVPs": "",
+          "Average Triple Kills": "",
+          "Average Quadro Kills": "",
+          "Average Penta Kills": "",
+          "Average Assists": "",
+          "Average K/R Ratio": "",
+          "Average Deaths": "",
+          "Total MVPs": "",
+          "Average Kills": "",
+          "Headshots per Match": "",
+        }
       });
-
-    axios.get(`https://open.faceit.com/data/v4/players/${profileData.player_id}/history`, {
-      headers: { Authorization: `Bearer ${apiKey}` }
-    })
-      .then(response => {
-        setMatchData(response.data);
-      })
-      .catch(err => {
-        console.log(err);
-      })
+      setMatchData([]);
+      setIsLoading(true);
+    };
   }, []);
 
+  useEffect(() => {
+    if (!profileData) return;
+
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const [playerResponse, matchResponse] = await Promise.all([
+          axios.get(`https://open.faceit.com/data/v4/players/${profileData.player_id}/stats/cs2`, {
+            headers: { Authorization: `Bearer ${apiKey}` }
+          }),
+          axios.get(`https://open.faceit.com/data/v4/players/${profileData.player_id}/history`, {
+            headers: { Authorization: `Bearer ${apiKey}` }
+          })
+        ]);
+
+        // Process player data and replace undefined values with empty strings
+        const processedPlayerData = {
+          ...playerResponse.data,
+          lifetime: Object.keys(playerResponse.data.lifetime || {}).reduce((acc, key) => {
+            acc[key] = playerResponse.data.lifetime[key] || "";
+            return acc;
+          }, {})
+        };
+
+        setPlayerData(processedPlayerData);
+        setMatchData(matchResponse.data || []);
+      } catch (err) {
+        //console.error('Error fetching data:', err);
+        Alert.alert('Error', 'Failed to load profile data', [
+          { text: 'OK', onPress: () => router.back() }
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [profileData?.player_id, apiKey]);
+
   const renderResults = (results) => {
+    if (!results || !Array.isArray(results)) {
+      return null;
+    }
+
     return (
       <View style={styles.resultsRow}>
         {results.map((result, index) => (
@@ -105,15 +186,33 @@ export default function Profile() {
 
   // Navigation functions
   const navigateToMaps = (segment) => {
-    navigation.navigate('maps', { mapData: segment });
+    router.push({
+      pathname: '/maps',
+      params: { mapData: JSON.stringify(segment) }
+    });
   };
 
   const navigateToLatest = (items) => {
-    navigation.navigate('latest', { matchData: items });
+    router.push({
+      pathname: '/latest',
+      params: { matchData: JSON.stringify(items) }
+    });
   };
 
-  const navigateToFriends = (friends_ids) => {
-    navigation.navigate('friends', { profileData: friends_ids });
+  const navigateToFriends = () => {
+    if (!profileData) {
+        console.error('No profile data available');
+        return;
+    }
+    
+    router.push({
+        pathname: '/friends',
+        params: { 
+            profileData: JSON.stringify({
+                friends_ids: profileData.friends_ids
+            })
+        }
+    });
   };
 
   const renderMapItems = () => {
@@ -219,10 +318,18 @@ const saveToFavorites = async () => {
 
 
   if (isLoading) {
-    return <Text>Loading ...</Text>;
+    return (
+        <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="white" />
+            <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+    );
   } else {
     return (
-      <ScrollView style={styles.background}>
+      <ScrollView 
+        style={styles.background}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
         <View style={styles.headerImage}>
           <Image
             source={{ uri: profileData.avatar }}
@@ -254,7 +361,7 @@ const saveToFavorites = async () => {
             </View>
           </View>
           <View style={styles.friendsButton}>
-            <TouchableOpacity onPress={() => navigateToFriends(profileData)}>
+            <TouchableOpacity onPress={() => navigateToFriends()}>
               <ThemedText type='subtitle'>Friends</ThemedText>
             </TouchableOpacity>
           </View>
@@ -264,8 +371,12 @@ const saveToFavorites = async () => {
             </TouchableOpacity>
           </View>
           <ThemedView style={styles.mainContainer}>
-            <ThemedText type='default'>Recent results</ThemedText>
-            {renderResults(playerData.lifetime["Recent Results"])}
+            {playerData.lifetime?.["Recent Results"] && (
+              <>
+                <ThemedText type='default'>Recent results</ThemedText>
+                {renderResults(playerData.lifetime["Recent Results"])}
+              </>
+            )}
           </ThemedView>
           <ThemedView style={styles.eloContainer}>
             <Image
@@ -313,11 +424,11 @@ const saveToFavorites = async () => {
             <ThemedText type='subtitle'>{playerData.lifetime["Average K/D Ratio"]}</ThemedText>
           </ThemedView>
         </View>
-        <View style={({ alignItems: "center", marginTop: 15 })}>
+        <View style={({ alignItems: "center", marginTop: 15, marginBottom: 20 })}>
           <ThemedText type='default'>Maps</ThemedText>
           {renderMapItems()}
         </View>
-        <View style={({ alignItems: "center", marginTop: 15 })}>
+        <View style={({ alignItems: "center", marginTop: 15, marginBottom: 20 })}>
           <ThemedText type='default'>Latest Matches</ThemedText>
           {renderLatestMatches()}
         </View>
@@ -411,6 +522,7 @@ const styles = StyleSheet.create({
   background: {
     width: '100%',
     backgroundColor: '#262626',
+    paddingBottom: 50,
   },
   mapContainer: {
     flexDirection: 'row',
@@ -453,5 +565,17 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
     marginTop: 10,
     fontSize: 20
-  }
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 50,
+    backgroundColor: '#262626',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 18,
+    color: 'white',
+  },
 });

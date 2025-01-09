@@ -5,7 +5,8 @@ import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import axios from 'axios';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useRouter, useFocusEffect } from 'expo-router';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const apiKey = process.env.EXPO_PUBLIC_FACEIT_APP_API_KEY;
 
@@ -39,8 +40,9 @@ export default function HomeScreen() {
   const [profileDataList, setProfileDataList] = useState([]);
   const [favoritesDataList, setfavoritesDataList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const navigation = useNavigation();
+  const router = useRouter();
   const [storage, setStorage] = useState(false)
+  const defaultAvatar = 'https://media.istockphoto.com/id/1337144146/sv/vektor/default-avatar-profile-icon-vector.jpg?s=612x612&w=0&k=20&c=GXVOqN9-6nUrgmK2thaQuTtf1bpxUMCEUvNlun-uX7g=';
 
   useEffect(() => {
     loadProfilesFromStorage();
@@ -194,52 +196,102 @@ export default function HomeScreen() {
   const ClearButton = () => {
     return (
       <TouchableOpacity style={styles.clearButton} onPress={ButtonAlertClearData}>
-        <Text style={styles.buttonText}>Delete profiles</Text>
+        <Text style={styles.buttonText}>Delete all profiles</Text>
       </TouchableOpacity>
     );
   }
   const ClearButton2 = () => {
     return (
       <TouchableOpacity style={styles.clearButton} onPress={ButtonAlertClearfavorites}>
-        <Text style={styles.buttonText}>Delete favorites</Text>
+        <Text style={styles.buttonText}>Delete all favorites</Text>
       </TouchableOpacity>
     );
   }
 
-  const ProfileCard = ({ profileData }: { profileData: any }) => {
+  const ProfileCard = ({ profileData, isFavorite = false }: { profileData: any, isFavorite?: boolean }) => {
     const skillLevel = profileData.games.cs2.skill_level;
     const levelImage = skillLevelImages[skillLevel];
 
     const navigateToProfile = () => {
-      navigation.navigate('profile', { profileData, });
+        router.push({
+            pathname: "/profile",
+            params: { 
+                profileData: JSON.stringify(profileData)
+            }
+        });
+    };
+
+    const handleDelete = () => {
+        Alert.alert(
+            'Delete Profile',
+            `Are you sure you want to remove ${profileData.nickname} from your ${isFavorite ? 'favorites' : 'followed profiles'}?`,
+            [
+                { 
+                    text: 'Cancel',
+                    style: 'cancel'
+                },
+                { 
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            const storageKey = isFavorite ? 'favorites' : '@profiles';
+                            const jsonValue = await AsyncStorage.getItem(storageKey);
+                            if (jsonValue) {
+                                const profiles = JSON.parse(jsonValue);
+                                const updatedProfiles = profiles.filter(
+                                    (profile) => profile.nickname !== profileData.nickname
+                                );
+                                await AsyncStorage.setItem(storageKey, JSON.stringify(updatedProfiles));
+                                
+                                // Update state based on which list we're modifying
+                                if (isFavorite) {
+                                    setfavoritesDataList(updatedProfiles);
+                                } else {
+                                    setProfileDataList(updatedProfiles);
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error deleting profile:', error);
+                            Alert.alert('Error', 'Failed to delete profile');
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     return (
-      <TouchableOpacity onPress={navigateToProfile} style={styles.profileCard}>
-        <Image
-          source={{ uri: profileData.avatar }}
-          style={styles.profileImage}
-        />
-        <View style={styles.profileTextContainer}>
-          <ThemedText style={styles.profileName}>{profileData.nickname}</ThemedText>
+        <View style={styles.profileCard}>
+            <TouchableOpacity 
+                onPress={navigateToProfile}
+                style={styles.profileContent}
+            >
+                <Image
+                    source={{ uri: profileData.avatar || defaultAvatar }}
+                    style={styles.profileImage}
+                />
+                <View style={styles.infoContainer}>
+                    <ThemedText style={styles.profileName}>{profileData.nickname}</ThemedText>
+                    <View style={styles.statsRow}>
+                        <Image
+                            source={levelImage}
+                            style={styles.levelImage}
+                        />
+                        <ThemedText>
+                            Elo: {profileData.games.cs2.faceit_elo}
+                        </ThemedText>
+                    </View>
+                </View>
+            </TouchableOpacity>
+            <TouchableOpacity 
+                onPress={handleDelete}
+                style={styles.deleteButton}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+                <Ionicons name="trash-outline" size={24} color="red" />
+            </TouchableOpacity>
         </View>
-        <View>
-          <Image
-            source={levelImage}
-            style={{
-              resizeMode: 'contain',
-              height: 30,
-              width: 30,
-              marginRight: 5
-            }}
-          />
-        </View>
-        <View>
-          <ThemedText>
-            Elo: {profileData.games.cs2.faceit_elo}
-          </ThemedText>
-        </View>
-      </TouchableOpacity>
     );
   };
 
@@ -262,7 +314,7 @@ export default function HomeScreen() {
       {isLoading ? <Text>Loading...</Text> : null}
       {favoritesDataList.length > 0 && (<ThemedText type="subtitle">Favorited profiles ⭐</ThemedText>)}
       {favoritesDataList.slice().reverse().map((profileData, index) => (
-        <ProfileCard key={index} profileData={profileData} />
+        <ProfileCard key={index} profileData={profileData} isFavorite={true} />
       ))}
       {favoritesDataList.length > 0 && (<ClearButton2 />)}
       {profileDataList.length > 0 && (<ThemedText type="subtitle">Followed profiles</ThemedText>)}
@@ -344,21 +396,37 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10,
   },
+  profileContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   profileImage: {
     width: 80,
     height: 80,
     borderRadius: 50,
-    marginRight: 20,
+    marginRight: 15,
   },
-  profileTextContainer: {
+  infoContainer: {
     flex: 1,
-    alignItems: 'center',
-    marginRight: 20,
+    justifyContent: 'center',
   },
   profileName: {
     fontSize: 16,
     fontWeight: 'bold',
-    justifyContent: 'center',
-    alignItems: 'center'
+    marginBottom: 5,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  levelImage: {
+    resizeMode: 'contain',
+    height: 30,
+    width: 30,
+    marginRight: 10,
+  },
+  deleteButton: {
+    padding: 10,
   },
 });

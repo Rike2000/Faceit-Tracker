@@ -1,19 +1,16 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { StyleSheet, Image, View, Text, ScrollView, FlatList, TouchableOpacity } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import { useLocalSearchParams } from 'expo-router';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import * as Progress from 'react-native-progress';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { useNavigation, NavigationContainer } from '@react-navigation/native';
 
 export default function Maps() {
   const apiKey = process.env.EXPO_PUBLIC_FACEIT_APP_API_KEY;
-  const route = useRoute();
-  const { mapData } = route.params;
-
-
+  const params = useLocalSearchParams();
+  const mapData = JSON.parse(params.mapData as string);
 
   return (
     <ScrollView style={styles.background}>
