@@ -1,4 +1,4 @@
-import { StyleSheet, Image, View, Text, ScrollView, Alert, TouchableOpacity, Linking, ActivityIndicator } from 'react-native';
+import { StyleSheet, Image, View, Text, ScrollView, Alert, TouchableOpacity, Linking, ActivityIndicator, Button } from 'react-native';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import * as Progress from 'react-native-progress';
@@ -51,6 +51,8 @@ export default function Profile() {
   });
   const [matchData, setMatchData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingAllMatches, setIsLoadingAllMatches] = useState(false);
+  const [allMatchesLoaded, setAllMatchesLoaded] = useState(false);
   const skillLevel = profileData.games.cs2.skill_level;
   const levelImage = skillLevelImages[skillLevel];
   const skillLevelLimitsMax = {
@@ -215,6 +217,7 @@ export default function Profile() {
     });
   };
 
+
   const renderMapItems = () => {
     if (!playerData.segments) return null;
 
@@ -289,6 +292,27 @@ export default function Profile() {
         </TouchableOpacity>
       );
     });
+  };
+
+  const renderAllMatches = async () => {
+    try {
+      setIsLoadingAllMatches(true);
+      const response = await axios.get(`https://open.faceit.com/data/v4/players/${profileData.player_id}/history?limit=100&offset=0`, {
+        headers: { Authorization: `Bearer ${apiKey}` }
+      });
+      
+      if (response.data && response.data.items) {
+        setMatchData(response.data);
+        setAllMatchesLoaded(true);
+      } else {
+        Alert.alert('Error', 'No match data received');
+      }
+    } catch (error) {
+      console.error('Error fetching all matches:', error);
+      Alert.alert('Error', 'Failed to load all matches');
+    } finally {
+      setIsLoadingAllMatches(false);
+    }
   };
 
 
@@ -431,7 +455,20 @@ const saveToFavorites = async () => {
         <View style={({ alignItems: "center", marginTop: 15, marginBottom: 20 })}>
           <ThemedText type='default'>Latest Matches</ThemedText>
           {renderLatestMatches()}
+          {isLoadingAllMatches && (
+            <View style={styles.matchesLoadingContainer}>
+              <ActivityIndicator size="small" color="white" />
+              <Text style={styles.matchesLoadingText}>Loading matches...</Text>
+            </View>
+          )}
         </View>
+        {!allMatchesLoaded && (
+          <View style={({alignItems: 'center'})}>
+            <TouchableOpacity style={styles.friendsButton} onPress={() => renderAllMatches()}>
+              <ThemedText type='default'>View all matches</ThemedText>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
 
     );
@@ -564,7 +601,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginHorizontal: 5,
     marginTop: 10,
-    fontSize: 20
+    fontSize: 20,
   },
   loadingContainer: {
     flex: 1,
@@ -576,6 +613,17 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 18,
+    color: 'white',
+  },
+  matchesLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+  },
+  matchesLoadingText: {
+    marginLeft: 10,
+    fontSize: 14,
     color: 'white',
   },
 });

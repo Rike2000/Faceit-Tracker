@@ -1,26 +1,32 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { StyleSheet, Image, View, Text, ScrollView, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, Image, View, Text, ScrollView, Alert, TouchableOpacity, ActivityIndicator, FlatList } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-// Add interface for friend data structure
+
 interface FriendData {
     nickname: string;
     avatar: string;
     games: {
         cs2?: any;
     };
-    [key: string]: any;  // For other properties we might receive
+    [key: string]: any;  
 }
+
+const FRIENDS_PER_PAGE = 20;
 
 export default function Friends() {
     const apiKey = process.env.EXPO_PUBLIC_FACEIT_APP_API_KEY;
     const params = useLocalSearchParams();
     const router = useRouter();
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const abortControllerRef = useRef<AbortController | null>(null);
     
     // Parse the profileData safely
     let profileData;
@@ -30,7 +36,6 @@ export default function Friends() {
             : params.profileData;
     } catch (error) {
         console.error('Error parsing profile data:', error);
-        // Handle parsing error - maybe navigate back
         router.back();
         return null;
     }
@@ -41,57 +46,72 @@ export default function Friends() {
     const [showLongLoadingMessage, setShowLongLoadingMessage] = useState(false);
     const defaultAvatar = 'https://media.istockphoto.com/id/1337144146/sv/vektor/default-avatar-profile-icon-vector.jpg?s=612x612&w=0&k=20&c=GXVOqN9-6nUrgmK2thaQuTtf1bpxUMCEUvNlun-uX7g=';
 
+    const fetchFriendsData = async (page: number) => {
+        try {
+            if (!profileData?.friends_ids) {
+                setLoading(false);
+                return;
+            }
+
+            abortControllerRef.current = new AbortController();
+            const startIndex = (page - 1) * FRIENDS_PER_PAGE;
+            const endIndex = startIndex + FRIENDS_PER_PAGE;
+            const currentFriendsIds = profileData.friends_ids.slice(startIndex, endIndex);
+            setHasMore(endIndex < profileData.friends_ids.length);
+
+            const promises = currentFriendsIds.map((id: string) =>
+                axios.get(`https://open.faceit.com/data/v4/players/${id}`, {
+                    headers: { "Authorization": "Bearer " + apiKey },
+                    signal: abortControllerRef.current.signal
+                })
+            );
+
+            const responses = await Promise.all(promises);
+            const friendsData = responses.map(response => ({
+                ...response.data,
+                avatar: response.data.avatar || defaultAvatar
+            }));
+
+            if (page === 1) {
+                setFriends(friendsData);
+            } else {
+                setFriends(prev => [...prev, ...friendsData]);
+            }
+
+            setCurrentPage(page);
+        } catch (err) {
+            if (axios.isCancel(err)) {
+                console.log('Request cancelled');
+                return;
+            }
+            console.error('Error fetching friends:', err);
+            Alert.alert('Error', 'Failed to load friends data', [
+                { text: 'OK', onPress: () => router.back() }
+            ]);
+        } finally {
+            setLoading(false);
+            setIsLoadingMore(false);
+            setShowLongLoadingMessage(false);
+        }
+    };
+
     useEffect(() => {
         loadProfilesFromStorage();
-        const fetchFriendsData = async () => {
-            try {
-                if (!profileData?.friends_ids) {
-                    setLoading(false);
-                    return;
-                }
-
-                // Set a timeout to show the message after 3 seconds
-                const timeoutId = setTimeout(() => {
-                    setShowLongLoadingMessage(true);
-                }, 3000);
-
-                const promises = profileData.friends_ids.map((id: string) =>
-                    axios.get(`https://open.faceit.com/data/v4/players/${id}`, {
-                        headers: { "Authorization": "Bearer " + apiKey }
-                    })
-                );
-
-                const responses = await Promise.all(promises);
-                const friendsData = responses.map(response => {
-                    const data = response.data;
-                    return {
-                        ...data,
-                        avatar: data.avatar || defaultAvatar
-                    };
-                });
-                setFriends(friendsData as any[]); 
-
-                // Clear the timeout if data loads before 3 seconds
-                clearTimeout(timeoutId);
-            } catch (err) {
-                console.error('Error fetching friends:', err);
-                Alert.alert('Error', 'Failed to load friends data', [
-                    { text: 'OK', onPress: () => router.back() }
-                ]);
-            } finally {
-                setLoading(false);
-                setShowLongLoadingMessage(false);
-            }
-        };
-
-        fetchFriendsData();
+        fetchFriendsData(1);
 
         return () => {
-            setFriends([]);
-            setLoadedProfiles([]);
-            setShowLongLoadingMessage(false);
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
         };
     }, []);
+
+    const loadMoreFriends = () => {
+        if (!isLoadingMore && hasMore) {
+            setIsLoadingMore(true);
+            fetchFriendsData(currentPage + 1);
+        }
+    };
 
     const buttonAlert = (profile: any) => {
         Alert.alert('Add profile?', 'Do you want to add this profile to your tracker', [
@@ -113,7 +133,7 @@ export default function Friends() {
 
     const saveProfileToStorage = async (profile: { games: { cs2: any }, nickname: string }) => {
         try {
-            setLoading(true); // Show loading state
+            setLoading(true);
 
             if (!profile.games.cs2) {
                 Alert.alert('Error!', 'This player has not yet registered CS2 on Faceit and cannot be added to your tracker', [
@@ -191,30 +211,41 @@ export default function Friends() {
         );
     };
 
+    const renderFooter = () => {
+        if(loading) return null;
+        if (!isLoadingMore) return null;
+        return (
+            <View style={styles.loadingMoreContainer}>
+                <ActivityIndicator size="small" color="white" />
+                <Text style={styles.loadingMoreText}>Loading more friends...</Text>
+            </View>
+        );
+    };
+
     return (
-        <ScrollView
+        <FlatList
+            data={friends}
+            renderItem={({ item }) => <ProfileCard profileData={item} />}
+            keyExtractor={(item, index) => item.nickname + index}
+            onEndReached={loadMoreFriends}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={renderFooter}
+            ListEmptyComponent={
+                loading ? (
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color="white" />
+                        <Text style={styles.loadingText}>Loading...</Text>
+                        {showLongLoadingMessage && (
+                            <Text style={styles.longLoadingText}>
+                                Looks like this person has a lot of friends added
+                            </Text>
+                        )}
+                    </View>
+                ) : null
+            }
             style={styles.background}
             contentContainerStyle={{ paddingBottom: 100 }}
-        >
-            {loading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="white" />
-                    <Text style={styles.loadingText}>Loading...</Text>
-                    {showLongLoadingMessage && (
-                        <Text style={styles.longLoadingText}>
-                            Looks like this person has a lot of friends added
-                        </Text>
-                    )}
-                </View>
-            ) : (
-                friends.map((friend, index) => (
-                    <ProfileCard 
-                        key={index} 
-                        profileData={friend}
-                    />
-                ))
-            )}
-        </ScrollView>
+        />
     );
 }
 
@@ -313,5 +344,16 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: 'rgba(255, 255, 255, 0.7)',
         fontStyle: 'italic'
+    },
+    loadingMoreContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 20,
+    },
+    loadingMoreText: {
+        marginLeft: 10,
+        color: 'white',
+        fontSize: 14,
     }
 });
